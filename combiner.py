@@ -20,9 +20,9 @@ def main():
 
     # Stop all processes
     for p in processes:
-        p.join(timeout=20)
-        #assert not p.is_alive()
-        #assert p.exitcode == 0
+        p.join()
+        assert not p.is_alive()
+        assert p.exitcode == 0
 
 if __name__ == '__main__':
     main()
