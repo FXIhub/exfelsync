@@ -1,13 +1,8 @@
+import numpy as np
 import msgpack
 import msgpack_numpy
 import zmq
 msgpack_numpy.patch()
-
-def agipd_listener(*args):
-    AGIPDListener(*args).start()
-
-def slowdata_listener(*args):
-    SlowDataListener(*args).start()
 
 class Listener(object):
     """Simple listener."""
@@ -32,20 +27,30 @@ class Listener(object):
         print("Starting...")
         self._running = True
         while(self._running):
-            print("Is running...")
-            data = self.get_data()
-            print('Got %d bytes' % (len(data)))
-            self.write_data(data)
+            self.write_data(self.get_data())
 
     def stop(self):
         self._running = False
 
+agipd_listener = lambda *args: AGIPDListener(*args).start()        
 class AGIPDListener(Listener):
     def __init__(self, *args, **kwargs):
         Listener.__init__(self, *args, **kwargs)
+    def get_pulse_data(self, obj, pos):
+        img = np.rollaxis(obj['image.data'][:,:,:,pos], 2)
+        img = np.ascontiguousarray(img.reshape((img.shape[0], 1, img.shape[1], img.shape[2])))
+        return img
+    def get_pulse_time(self, obj, pos):
+        timestamp = obj['metadata']['timestamp']
+        return str(timestamp['sec'] + timestamp['frac'] * 1e-18 + pos * 1e-2)
     def write_data(self,data):
-        print(data)
+        train = data['SPB_DET_AGIPD1M-1/DET/3CH0:xtdf']
+        for p in range(2,64-2,2):
+            pulse_data = self.get_pulse_data(train, p)
+            pulse_time = self.get_pulse_time(train, p)
+            self._buf[pulse_time] = pulse_data
 
+slowdata_listener = lambda *args: SlowDataListener(*args).start()            
 class SlowDataListener(Listener):
     def __init__(self, *args, **kwargs):
         Listener.__init__(self, *args, **kwargs)
