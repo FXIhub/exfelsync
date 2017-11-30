@@ -1,32 +1,37 @@
-from multiprocessing import Process, Manager
-from listener import slowdata_listener
-from listener import agipd_listener
+from multiprocessing import Process, Manager, Queue
+#from listener import slowdata_listener
+#from listener import agipd_listener
+import listener
 from dealer import dealer
 
 def main():
 
     # Initialize data managers
-    buffer_agipd_03 = Manager().dict()
-    buffer_agipd_04 = Manager().dict()
-    buffer_agipd_15 = Manager().dict()
-    buffer_slowdata = Manager().dict()
-    buffers = [buffer_agipd_03,
-               buffer_agipd_04,
-               buffer_agipd_15,
-               buffer_slowdata]
+    # buffer_agipd_03 = Manager().dict()
+    # buffer_agipd_04 = Manager().dict()
+    # buffer_agipd_15 = Manager().dict()
+    # buffer_slowdata = Manager().dict()
+    # buffers = [buffer_agipd_03,
+    #            buffer_agipd_04,
+    #            buffer_agipd_15,
+    #            buffer_slowdata]
+    buffers = [Manager().dict(),
+               Manager().dict(),
+               Manager().dict()]
+    
+    queue = Queue()
+    
         
     # List of processes
     processes = []
     processes.append(Process(target=dealer,
-                             args=('tcp://127.0.0.1:5100', buffer_agipd_03)))
-    processes.append(Process(target=agipd_listener,
-                             args=('tcp://127.0.0.1:4600', buffer_agipd_03, 10)))
-    processes.append(Process(target=agipd_listener,
-                             args=('tcp://127.0.0.1:4601', buffer_agipd_04, 10)))
-    processes.append(Process(target=agipd_listener,
-                             args=('tcp://127.0.0.1:4602', buffer_agipd_15, 10)))
-    processes.append(Process(target=slowdata_listener,
-                             args=('tcp://127.0.0.1:4602', buffer_slowdata, 10)))
+                             args=('tcp://127.0.0.1:5100', buffers, queue)))
+    processes.append(Process(target=listener.listener,
+                             args=('tcp://127.0.0.1:4600', buffers, queue, 0)))
+    processes.append(Process(target=listener.listener,
+                             args=('tcp://127.0.0.1:4601', buffers, queue, 1)))
+    processes.append(Process(target=listener.listener,
+                             args=('tcp://127.0.0.1:4602', buffers, queue, 2)))
 
     
     # Start all processes
