@@ -11,8 +11,8 @@ class Dealer(object):
         print("Starting reading...")
         while(True):
             print("Reader", len(self._buf))
-            for k in self._buf.keys():
-                del self._buf[k]
+            #for k in self._buf.keys():
+            #    del self._buf[k]
             sys.stdout.flush()
             time.sleep(1)
 

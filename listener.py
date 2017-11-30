@@ -6,13 +6,14 @@ msgpack_numpy.patch()
 
 class Listener(object):
     """Simple listener."""
-    def __init__(self, socket, buf):
+    def __init__(self, socket, buf, lifetime = 60):
         self._socket = socket
         self._zmq_context = zmq.Context()
         self._zmq_request = self._zmq_context.socket(zmq.REQ)
         self._zmq_request.connect(self._socket)
         self._buf = buf
         self._running = False
+        self._lifetime = lifetime
 
     def get_data(self):
         """Receive data packets over the network"""
@@ -20,9 +21,16 @@ class Listener(object):
         return  msgpack.loads(self._zmq_request.recv())
 
     def write_data(self, data):
-        """Write data into the ringbuffer"""
+        """Write data into the buffer"""
         print('Wrote %d bytes' % (len(data)))
-    
+
+    def _drop_old_data(self, current_time):
+        """Remove expired data from the buffer"""
+        for k in self._buf.keys():
+            timelimit = current_time - self._lifetime
+            if (k < timelimit):
+                del self._buf[k]
+        
     def start(self):
         print("Starting...")
         self._running = True
@@ -42,14 +50,16 @@ class AGIPDListener(Listener):
         return img
     def get_pulse_time(self, obj, pos):
         timestamp = obj['metadata']['timestamp']
-        return str(timestamp['sec'] + timestamp['frac'] * 1e-18 + pos * 1e-2)
+        return timestamp['sec'] + timestamp['frac'] * 1e-18 + pos * 1e-2
     def write_data(self,data):
         train = data['SPB_DET_AGIPD1M-1/DET/3CH0:xtdf']
         for p in range(2,64-2,2):
             pulse_data = self.get_pulse_data(train, p)
             pulse_time = self.get_pulse_time(train, p)
             self._buf[pulse_time] = pulse_data
+        self._drop_old_data(pulse_time)
 
+        
 slowdata_listener = lambda *args: SlowDataListener(*args).start()            
 class SlowDataListener(Listener):
     def __init__(self, *args, **kwargs):
