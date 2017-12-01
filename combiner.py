@@ -1,8 +1,11 @@
-from multiprocessing import Process, Manager, Queue
+#from multiprocessing import Process, Manager, Queue
+from threading import Thread
+from queue import Queue
 #from listener import slowdata_listener
 #from listener import agipd_listener
 import listener
 from dealer import dealer
+from collections import OrderedDict
 
 def main():
 
@@ -15,22 +18,23 @@ def main():
     #            buffer_agipd_04,
     #            buffer_agipd_15,
     #            buffer_slowdata]
-    buffers = [Manager().dict(),
-               Manager().dict(),
-               Manager().dict()]
+    # buffers = [Manager().dict(),
+    #            Manager().dict(),
+    #            Manager().dict()]
+    buffers = [OrderedDict(), OrderedDict(), OrderedDict()]
     
     queue = Queue()
     
         
     # List of processes
     processes = []
-    processes.append(Process(target=dealer,
+    processes.append(Thread(target=dealer,
                              args=('tcp://127.0.0.1:5100', buffers, queue)))
-    processes.append(Process(target=listener.listener,
+    processes.append(Thread(target=listener.listener,
                              args=('tcp://127.0.0.1:4600', buffers, queue, 0)))
-    processes.append(Process(target=listener.listener,
+    processes.append(Thread(target=listener.listener,
                              args=('tcp://127.0.0.1:4601', buffers, queue, 1)))
-    processes.append(Process(target=listener.listener,
+    processes.append(Thread(target=listener.listener,
                              args=('tcp://127.0.0.1:4602', buffers, queue, 2)))
 
     

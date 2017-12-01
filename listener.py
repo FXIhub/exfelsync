@@ -30,6 +30,10 @@ class Listener(object):
         if all([train_id in this_buf for this_buf in self._buf]):
             self._queue.put(train_id)
 
+        if len(self._buf[self._index]) > self._lifetime:
+            print("Remove from dict")
+            self._buf[self._index].popitem(last=False)
+
     # def _drop_old_data(self, current_time):
     #     """Remove expired data from the buffer"""
     #     for k in self._buf.keys():

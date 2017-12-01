@@ -16,6 +16,7 @@ class Dealer(object):
         self._socket = socket
         # TODO: Create a ZMQ service that can deal out data to a client
         self._send_queue = deque(maxlen=100)
+        self._send_queue_max_size = 10
         self._buf = buf
         self._queue = queue
         self._socket = socket
@@ -31,10 +32,13 @@ class Dealer(object):
             if train_id is None:
                 time.sleep(0.0001)
             else:
-                print("Sending data {}".format(train_id))
                 data_list = [this_buf[train_id] for this_buf in self._buf]
                 #self._zmq_socket.send(msgpack.dumps(data_list))
-                #self._send_queue.append(data_list)
+                if len(self._send_queue) < self._send_queue_max_size:
+                    print("Sending data {}".format(train_id))
+                    self._send_queue.append(data_list)
+                else:
+                    print("Skipping data {}".format(train_id))
                 for this_buf in self._buf:
                     del this_buf[train_id]
 
@@ -42,5 +46,10 @@ class Dealer(object):
         zmq_context = zmq.Context()
         zmq_socket = zmq_context.socket(zmq.REP)
         zmq_socket.bind(self._socket)
-        
-                
+
+        while(True):
+            msg = zmq_socket.recv()
+            if msg == b'next':
+                while len(self._queue) <= 0:
+                    sleep(0.1)
+                zmq_socket.send(msgpack.dumps(queue.popleft()))
