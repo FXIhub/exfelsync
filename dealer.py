@@ -17,7 +17,7 @@ class Dealer(object):
         # TODO: Create a ZMQ service that can deal out data to a client
         self._send_queue = deque(maxlen=100)
         self._buf = buf
-        self._queue = queue
+        self._queues = queue
         self._socket = socket
 
         # t = Thread(target=self._send, args=(self._send_queue,))
@@ -27,16 +27,17 @@ class Dealer(object):
     def start(self):
         print("Starting reading...")
         while(True):
-            train_id = self._queue.get()
-            if train_id is None:
-                time.sleep(0.0001)
-            else:
-                print("Sending data {}".format(train_id))
-                data_list = [this_buf[train_id] for this_buf in self._buf]
-                #self._zmq_socket.send(msgpack.dumps(data_list))
-                #self._send_queue.append(data_list)
-                for this_buf in self._buf:
-                    del this_buf[train_id]
+            for this_queue in self._queues:
+                train_id = this_queue.get()
+                if train_id is None:
+                    #time.sleep(0.01)
+                    continue
+                else:
+                    if all([train_id in this_buf for this_buf in self._buf]):
+                        data_list = [this_buf[train_id] for this_buf in self._buf]
+                        print("send data {}".format(train_id))
+                        for this_buf in self._buf:
+                            del this_buf[train_id]
 
     def send(self, queue):
         zmq_context = zmq.Context()

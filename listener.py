@@ -7,13 +7,12 @@ msgpack_numpy.patch()
 listener = lambda *args: Listener(*args).start()
 class Listener(object):
     """Simple listener."""
-    def __init__(self, socket, buf, queue, index, lifetime = 60):
+    def __init__(self, socket, buf, queue, lifetime = 60):
         self._socket = socket
         self._zmq_context = zmq.Context()
         self._zmq_request = self._zmq_context.socket(zmq.REQ)
         self._zmq_request.connect(self._socket)
         self._buf = buf
-        self._index = index
         self._queue = queue
         self._running = False
         self._lifetime = lifetime
@@ -24,11 +23,8 @@ class Listener(object):
         #return  msgpack.loads(self._zmq_request.recv())
         data = msgpack.loads(self._zmq_request.recv())
         train_id = data[list(data.keys())[0]]["header.trainId"]
-        self._buf[self._index][train_id] = data
-        #self._buf[self._index][train_id] = data[list(data.keys())[0]]["header.trainId"]
-
-        if all([train_id in this_buf for this_buf in self._buf]):
-            self._queue.put(train_id)
+        self._buf[train_id] = data
+        self._queue.put(train_id)
 
     # def _drop_old_data(self, current_time):
     #     """Remove expired data from the buffer"""

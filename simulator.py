@@ -4,7 +4,9 @@ msgpack_numpy.patch()
 import numpy as np
 from time import sleep, time
 import sys, os
-from threading import Thread
+#from threading import Thread
+from multiprocessing import Process
+Thread = Process
 import zmq
 import pickle
 import copy

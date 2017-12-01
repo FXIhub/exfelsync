@@ -19,7 +19,8 @@ def main():
                Manager().dict(),
                Manager().dict()]
     
-    queue = Queue()
+    #queue = Queue()
+    queue = [Queue(), Queue(), Queue()]
     
         
     # List of processes
@@ -27,11 +28,11 @@ def main():
     processes.append(Process(target=dealer,
                              args=('tcp://127.0.0.1:5100', buffers, queue)))
     processes.append(Process(target=listener.listener,
-                             args=('tcp://127.0.0.1:4600', buffers, queue, 0)))
+                             args=('tcp://127.0.0.1:4600', buffers[0], queue[0])))
     processes.append(Process(target=listener.listener,
-                             args=('tcp://127.0.0.1:4601', buffers, queue, 1)))
+                             args=('tcp://127.0.0.1:4601', buffers[1], queue[1])))
     processes.append(Process(target=listener.listener,
-                             args=('tcp://127.0.0.1:4602', buffers, queue, 2)))
+                             args=('tcp://127.0.0.1:4602', buffers[2], queue[2])))
 
     
     # Start all processes
