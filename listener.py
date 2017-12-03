@@ -24,22 +24,18 @@ class Listener(object):
         #return  msgpack.loads(self._zmq_request.recv())
         data = msgpack.loads(self._zmq_request.recv())
         train_id = data[list(data.keys())[0]]["header.trainId"]
+
+        #print("received data")
+        
+        while len(self._buf[self._index]) > 20:
+            self._buf[self._index].popitem(last=False)
+
+        #if len(self._buf[self._index]) < 25:
         self._buf[self._index][train_id] = data
         #self._buf[self._index][train_id] = data[list(data.keys())[0]]["header.trainId"]
 
         if all([train_id in this_buf for this_buf in self._buf]):
             self._queue.put(train_id)
-
-        if len(self._buf[self._index]) > self._lifetime:
-            print("Remove from dict")
-            self._buf[self._index].popitem(last=False)
-
-    # def _drop_old_data(self, current_time):
-    #     """Remove expired data from the buffer"""
-    #     for k in self._buf.keys():
-    #         timelimit = current_time - self._lifetime
-    #         if (k < timelimit):
-    #             del self._buf[k]
         
     def start(self):
         print("Starting...")

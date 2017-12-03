@@ -20,7 +20,7 @@ _SHAPE = (_SAVED_PULSES, _MODULES, _MOD_X, _MOD_Y)
 #_SHAPE = (_MOD_X, _MOD_Y, 2, _PULSES)
 
 data_file = "/gpfs/exfel/exp/SPB/201701/p002013/usr/ekeberg/data_simulation_template/dump_3ch0.p"
-data_file = "/Users/ekeberg/Work/Beamtimes/XFEL2013/xfel2013/scripts/dump_3ch0.p"
+#data_file = "/Users/ekeberg/Work/Beamtimes/XFEL2013/xfel2013/scripts/dump_3ch0.p"
 
 with open(data_file, "rb") as file_handle:
     data_dict = pickle.load(file_handle)
@@ -36,9 +36,13 @@ def sender(source, port):
     while True:
         msg = socket.recv()
         if msg == b'next':
-            local_data_dict["SPB_DET_AGIPD1M-1/DET/3CH0:xtdf"]["header.trainId"] = counter
+            if np.random.random() > 0.8:
+                local_data_dict["SPB_DET_AGIPD1M-1/DET/3CH0:xtdf"]["header.trainId"] = counter
+            else:
+                local_data_dict["SPB_DET_AGIPD1M-1/DET/3CH0:xtdf"]["header.trainId"] = counter
             print(local_data_dict["SPB_DET_AGIPD1M-1/DET/3CH0:xtdf"]["header.trainId"])
             socket.send(msgpack.dumps(local_data_dict))
+            sleep(0.08)
             print("sending data at port {}".format(port))
             counter += 1
         else:
